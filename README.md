@@ -173,26 +173,6 @@ http://host.docker.internal:4000/graphql
 
 In production, set the real external GraphQL URL and bearer token in `.env` or GitHub Actions secrets.
 
-## Repository Description
+## Author
 
-SAP-style purchase order integration demo using Angular, ASP.NET Core, RabbitMQ, Docker, and GraphQL, with local development and Azure VM deployment workflows.
-
-## Suggested Tags
-
-```text
-angular
-dotnet
-aspnet-core
-docker
-docker-compose
-rabbitmq
-graphql
-azure
-github-actions
-microservices
-clean-architecture
-integration
-sap
-purchase-orders
-message-queue
-```
+Developed by Diego S.
