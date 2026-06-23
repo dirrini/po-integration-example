@@ -1,0 +1,33 @@
+﻿# Use standard Alpine which Docker Hub pulls perfectly on your network
+FROM alpine:3.20
+
+WORKDIR /app
+
+# Install .NET 8 SDK and dependencies via native Alpine packages
+RUN apk add --no-cache \
+    bash \
+    icu-data-full \
+    icu-libs \
+    dotnet8-sdk \
+    inotify-tools
+
+# Set environment variables so .NET knows where it lives and handles globalization
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV PATH="${PATH}:/root/.dotnet"
+
+# 1. Copy ALL project files across the folders to restore dependencies in one go
+COPY src/Nexus.Orders.Api/*.csproj ./src/Nexus.Orders.Api/
+COPY src/Nexus.Orders.Application/*.csproj ./src/Nexus.Orders.Application/
+COPY src/Nexus.Orders.Infrastructure/*.csproj ./src/Nexus.Orders.Infrastructure/
+
+# Also copy the solution file if you want to restore everything at once
+COPY Nexus.Orders.sln ./
+
+# Restore dependencies targeting the specific entry Web API project
+RUN dotnet restore src/Nexus.Orders.Api/Nexus.Orders.Api.csproj
+
+# 2. Copy the entire source directory containing all layers
+COPY src/ ./src/
+
+# 3. Tell dotnet watch exactly WHICH project it needs to run and watch!
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "src/Nexus.Orders.Api/Nexus.Orders.Api.csproj", "--urls", "http://0.0.0.0:5000"]

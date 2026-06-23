@@ -1,0 +1,55 @@
+﻿services:
+  backend:
+    container_name: dotnet_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      # Isolate the compiler workspaces for each separate layer
+      - /app/src/Nexus.Orders.Api/bin/
+      - /app/src/Nexus.Orders.Api/obj/
+      - /app/src/Nexus.Orders.Application/bin/
+      - /app/src/Nexus.Orders.Application/obj/
+      - /app/src/Nexus.Orders.Infrastructure/bin/
+      - /app/src/Nexus.Orders.Infrastructure/obj/
+    env_file:
+      - .env.local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - rabbitmq
+
+  frontend:
+    container_name: angular_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq_broker
+    env_file:
+      - .env.local
+    ports:
+      - "5672:5672"   # AMQP protocol port (for code connection)
+      - "15672:15672" # RabbitMQ Management UI Dashboard
+    volumes:
+      - rabbitmq_dev_data:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq_dev_data:

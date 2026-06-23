@@ -1,0 +1,79 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_VM_HOST: ${{ vars.AZURE_VM_HOST }}
+  DEPLOY_PATH: /home/${{ secrets.AZURE_VM_USER }}/dotnet-angular-app
+
+jobs:
+  deploy:
+    name: Build and run on Azure VM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.AZURE_VM_SSH_KEY }}" > ~/.ssh/azure_vm_key
+          chmod 600 ~/.ssh/azure_vm_key
+          ssh-keyscan -H "$AZURE_VM_HOST" >> ~/.ssh/known_hosts
+
+      - name: Package application
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='.env.local' \
+            --exclude='frontend/node_modules' \
+            --exclude='frontend/dist' \
+            --exclude='backend/**/bin' \
+            --exclude='backend/**/obj' \
+            -czf /tmp/dotnet-angular-app.tar.gz .
+
+      - name: Upload application to VM
+        run: |
+          ssh -i ~/.ssh/azure_vm_key "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST" "mkdir -p '$DEPLOY_PATH'"
+          scp -i ~/.ssh/azure_vm_key /tmp/dotnet-angular-app.tar.gz "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST:/tmp/dotnet-angular-app.tar.gz"
+
+      - name: Deploy with Docker Compose
+        env:
+          WEB_PORT: ${{ vars.WEB_PORT || '80' }}
+          RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
+          RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
+          EXTERNAL_PRODUCTS_GRAPHQL_URL: ${{ secrets.EXTERNAL_PRODUCTS_GRAPHQL_URL }}
+          EXTERNAL_PRODUCTS_API_KEY: ${{ secrets.EXTERNAL_PRODUCTS_API_KEY }}
+        run: |
+          cat > /tmp/production.env <<EOF
+          WEB_PORT=$WEB_PORT
+          ASPNETCORE_ENVIRONMENT=Production
+          ASPNETCORE_URLS=http://+:5000
+          RABBITMQ_DEFAULT_USER=$RABBITMQ_DEFAULT_USER
+          RABBITMQ_DEFAULT_PASS=$RABBITMQ_DEFAULT_PASS
+          RabbitMq__HostName=rabbitmq
+          RabbitMq__UserName=$RABBITMQ_DEFAULT_USER
+          RabbitMq__Password=$RABBITMQ_DEFAULT_PASS
+          EXTERNAL_PRODUCTS_GRAPHQL_URL=$EXTERNAL_PRODUCTS_GRAPHQL_URL
+          EXTERNAL_PRODUCTS_API_KEY=$EXTERNAL_PRODUCTS_API_KEY
+          ExternalProducts__GraphqlUrl=$EXTERNAL_PRODUCTS_GRAPHQL_URL
+          ExternalProducts__ApiKey=$EXTERNAL_PRODUCTS_API_KEY
+          EOF
+
+          scp -i ~/.ssh/azure_vm_key /tmp/production.env "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST:/tmp/dotnet-angular-app.env"
+
+          ssh -i ~/.ssh/azure_vm_key "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST" <<EOF
+          set -euo pipefail
+          tar -xzf /tmp/dotnet-angular-app.tar.gz -C "$DEPLOY_PATH"
+          mv /tmp/dotnet-angular-app.env "$DEPLOY_PATH/.env"
+          cd "$DEPLOY_PATH"
+          docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+          docker image prune -f
+          EOF
