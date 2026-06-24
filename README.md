@@ -25,6 +25,7 @@ The backend is split into three projects:
 - RabbitMQ
 - Docker and Docker Compose
 - Nginx for production frontend hosting
+- Caddy for HTTPS and automatic certificate renewal
 - GitHub Actions for Azure VM deployment
 
 ## Local Development
@@ -112,10 +113,11 @@ docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 Production ports:
 
 ```text
-80 -> Angular/Nginx frontend
+80  -> HTTP redirect and Let's Encrypt validation
+443 -> HTTPS app traffic
 ```
 
-The frontend proxies `/api/...` requests to the backend container through Nginx, so the backend does not need to be publicly exposed.
+Caddy terminates HTTPS and proxies to the frontend container. The frontend proxies `/api/...` requests to the backend container through Nginx, so the backend does not need to be publicly exposed.
 
 For Azure VM setup details, see:
 

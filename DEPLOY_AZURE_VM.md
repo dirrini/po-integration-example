@@ -4,6 +4,7 @@ This deployment is for `dotnet-angular-app`.
 
 The production stack uses:
 
+- `caddy`: HTTPS reverse proxy with automatic Let's Encrypt certificates.
 - `frontend`: Nginx serving the Angular build on port 80.
 - `backend`: ASP.NET Core API on the internal Docker network.
 - `rabbitmq`: RabbitMQ broker with a persisted Docker volume.
@@ -48,6 +49,7 @@ nano .env
 Set:
 
 ```env
+APP_DOMAIN=po-integration-example.dirrini.tech
 EXTERNAL_PRODUCTS_GRAPHQL_URL=https://your-project-pulse-domain.com/graphql
 EXTERNAL_PRODUCTS_API_KEY=<integration-api-key-from-project-pulse>
 RABBITMQ_DEFAULT_PASS=<strong-password>
@@ -69,6 +71,14 @@ docker compose -f docker-compose.prod.yml --env-file .env logs -f
 Open:
 
 ```text
+https://po-integration-example.dirrini.tech/
+```
+
+HTTP also works, but Caddy will redirect it to HTTPS.
+
+The VM can still be reached directly over HTTP if needed:
+
+```text
 http://64.236.155.201/
 ```
 
@@ -77,7 +87,8 @@ http://64.236.155.201/
 Open inbound:
 
 - `22` for SSH
-- `80` for the web app
+- `80` for HTTP and Let's Encrypt validation
+- `443` for HTTPS
 
 Do not expose RabbitMQ publicly unless you intentionally need it.
 
@@ -111,10 +122,41 @@ Optional repository variable:
 
 ```text
 AZURE_VM_HOST=64.236.155.201
-WEB_PORT=80
+APP_DOMAIN=po-integration-example.dirrini.tech
+HTTP_PORT=80
+HTTPS_PORT=443
 ```
 
 `AZURE_VM_HOST` is required by the workflow. It is a repository variable instead of being hardcoded in the workflow file.
+`APP_DOMAIN` is required so Caddy can request the correct SSL certificate.
+
+## 8. Custom domain
+
+This deployment is configured for:
+
+```text
+po-integration-example.dirrini.tech
+```
+
+Your DNS provider should have an `A` record like this:
+
+```text
+po-integration-example.dirrini.tech -> 64.236.155.201
+```
+
+Azure must allow inbound traffic on ports `80` and `443`.
+
+Caddy will request and renew the SSL certificate automatically. After changing DNS, Caddy config, or production compose, redeploy:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+```
+
+Check the Caddy logs during the first certificate request:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env logs -f caddy
+```
 
 The workflow runs automatically on pushes to `main`, or manually from GitHub Actions with `workflow_dispatch`.
 

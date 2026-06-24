@@ -46,14 +46,18 @@ jobs:
 
       - name: Deploy with Docker Compose
         env:
-          WEB_PORT: ${{ vars.WEB_PORT || '80' }}
+          APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+          HTTP_PORT: ${{ vars.HTTP_PORT || '80' }}
+          HTTPS_PORT: ${{ vars.HTTPS_PORT || '443' }}
           RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
           RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
           EXTERNAL_PRODUCTS_GRAPHQL_URL: ${{ secrets.EXTERNAL_PRODUCTS_GRAPHQL_URL }}
           EXTERNAL_PRODUCTS_API_KEY: ${{ secrets.EXTERNAL_PRODUCTS_API_KEY }}
         run: |
           cat > /tmp/production.env <<EOF
-          WEB_PORT=$WEB_PORT
+          APP_DOMAIN=$APP_DOMAIN
+          HTTP_PORT=$HTTP_PORT
+          HTTPS_PORT=$HTTPS_PORT
           ASPNETCORE_ENVIRONMENT=Production
           ASPNETCORE_URLS=http://+:5000
           RABBITMQ_DEFAULT_USER=$RABBITMQ_DEFAULT_USER
