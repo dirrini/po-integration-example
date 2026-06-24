@@ -8,16 +8,29 @@ on:
 
 env:
   AZURE_VM_HOST: ${{ vars.AZURE_VM_HOST }}
+  AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
   DEPLOY_PATH: /home/${{ secrets.AZURE_VM_USER }}/dotnet-angular-app
 
 jobs:
   deploy:
     name: Build and run on Azure VM
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate deployment configuration
+        run: |
+          test -n "$AZURE_VM_HOST" || (echo "Missing production environment variable: AZURE_VM_HOST" && exit 1)
+          test -n "$AZURE_VM_USER" || (echo "Missing production environment secret: AZURE_VM_USER" && exit 1)
+          test -n "${{ secrets.AZURE_VM_SSH_KEY }}" || (echo "Missing production environment secret: AZURE_VM_SSH_KEY" && exit 1)
+          test -n "${{ vars.APP_DOMAIN }}" || (echo "Missing production environment variable: APP_DOMAIN" && exit 1)
+          test -n "${{ secrets.RABBITMQ_DEFAULT_USER }}" || (echo "Missing production environment secret: RABBITMQ_DEFAULT_USER" && exit 1)
+          test -n "${{ secrets.RABBITMQ_DEFAULT_PASS }}" || (echo "Missing production environment secret: RABBITMQ_DEFAULT_PASS" && exit 1)
+          test -n "${{ secrets.EXTERNAL_PRODUCTS_GRAPHQL_URL }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_GRAPHQL_URL" && exit 1)
+          test -n "${{ secrets.EXTERNAL_PRODUCTS_API_KEY }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_API_KEY" && exit 1)
 
       - name: Configure SSH
         run: |
@@ -41,8 +54,8 @@ jobs:
 
       - name: Upload application to VM
         run: |
-          ssh -i ~/.ssh/azure_vm_key "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST" "mkdir -p '$DEPLOY_PATH'"
-          scp -i ~/.ssh/azure_vm_key /tmp/dotnet-angular-app.tar.gz "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST:/tmp/dotnet-angular-app.tar.gz"
+          ssh -i ~/.ssh/azure_vm_key "$AZURE_VM_USER@$AZURE_VM_HOST" "mkdir -p '$DEPLOY_PATH'"
+          scp -i ~/.ssh/azure_vm_key /tmp/dotnet-angular-app.tar.gz "$AZURE_VM_USER@$AZURE_VM_HOST:/tmp/dotnet-angular-app.tar.gz"
 
       - name: Deploy with Docker Compose
         env:
@@ -71,9 +84,9 @@ jobs:
           ExternalProducts__ApiKey=$EXTERNAL_PRODUCTS_API_KEY
           EOF
 
-          scp -i ~/.ssh/azure_vm_key /tmp/production.env "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST:/tmp/dotnet-angular-app.env"
+          scp -i ~/.ssh/azure_vm_key /tmp/production.env "$AZURE_VM_USER@$AZURE_VM_HOST:/tmp/dotnet-angular-app.env"
 
-          ssh -i ~/.ssh/azure_vm_key "${{ secrets.AZURE_VM_USER }}@$AZURE_VM_HOST" <<EOF
+          ssh -i ~/.ssh/azure_vm_key "$AZURE_VM_USER@$AZURE_VM_HOST" <<EOF
           set -euo pipefail
           tar -xzf /tmp/dotnet-angular-app.tar.gz -C "$DEPLOY_PATH"
           mv /tmp/dotnet-angular-app.env "$DEPLOY_PATH/.env"

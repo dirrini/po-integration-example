@@ -103,7 +103,7 @@ docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 
 The workflow is in `.github/workflows/deploy-azure.yml`.
 
-Create these GitHub repository secrets in `Settings > Secrets and variables > Actions`:
+Create these GitHub Environment secrets in `Settings > Environments > production`:
 
 ```text
 AZURE_VM_USER
@@ -118,7 +118,7 @@ EXTERNAL_PRODUCTS_API_KEY
 
 `AZURE_VM_SSH_KEY` must be the private key that matches a public key in the VM user's `~/.ssh/authorized_keys`.
 
-Optional repository variable:
+Create these GitHub Environment variables in `Settings > Environments > production`:
 
 ```text
 AZURE_VM_HOST=64.236.155.201
@@ -127,8 +127,20 @@ HTTP_PORT=80
 HTTPS_PORT=443
 ```
 
-`AZURE_VM_HOST` is required by the workflow. It is a repository variable instead of being hardcoded in the workflow file.
+`AZURE_VM_HOST` is required by the workflow. It is an environment variable instead of being hardcoded in the workflow file.
 `APP_DOMAIN` is required so Caddy can request the correct SSL certificate.
+
+`HTTP_PORT` and `HTTPS_PORT` are optional because the workflow defaults to `80` and `443`, but adding them makes the deployment settings explicit.
+
+If the workflow log shows empty values like this:
+
+```text
+env:
+  AZURE_VM_HOST:
+  DEPLOY_PATH: /home//dotnet-angular-app
+```
+
+then `AZURE_VM_HOST` was not created as an environment variable, or `AZURE_VM_USER` was not created as an environment secret in the `production` environment.
 
 ## 8. Custom domain
 
