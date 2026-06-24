@@ -59,7 +59,7 @@ app.MapGet("/api/worker/start", (RabbitMqWorkerManager worker) =>
 
 app.MapPost("/api/mulesoft/orders", ([FromBody] SalesOrder order, IMessagePublisher publisher) =>
 {
-    if (order == null || string.IsNullOrWhiteSpace(order.PoNumber) || string.IsNullOrWhiteSpace(order.Vendor) || string.IsNullOrWhiteSpace(order.MaterialCode) || string.IsNullOrWhiteSpace(order.MaterialDescription) || string.IsNullOrWhiteSpace(order.DeliveryDate) || order.Quantity <= 0)
+    if (order == null || string.IsNullOrWhiteSpace(order.ProjectExternalCode) || string.IsNullOrWhiteSpace(order.PoNumber) || string.IsNullOrWhiteSpace(order.Vendor) || string.IsNullOrWhiteSpace(order.MaterialCode) || string.IsNullOrWhiteSpace(order.MaterialDescription) || string.IsNullOrWhiteSpace(order.DeliveryDate) || order.Quantity <= 0)
     {
         return Results.BadRequest("Invalid Order Format");
     }
@@ -185,6 +185,7 @@ public sealed class RabbitMqWorkerManager : IDisposable
             }
 
             var order = incomingOrder!;
+            order.ProjectExternalCode = string.IsNullOrWhiteSpace(order.ProjectExternalCode) ? "SAP-PROJ-001" : order.ProjectExternalCode;
             Console.WriteLine($"[RabbitMQ Worker] Picked up Purchase Order {order.PoNumber} from queue.");
             await _externalIntegration.SendOrderAsync(order);
             Console.WriteLine($"[SAP RFC Connector] SUCCESS: Integrated Purchase Order {order.PoNumber} for vendor: {order.Vendor}");
@@ -206,6 +207,7 @@ public sealed class RabbitMqWorkerManager : IDisposable
     private static bool IsProcessable(SalesOrder? order)
     {
         return order != null
+            && !string.IsNullOrWhiteSpace(order.ProjectExternalCode)
             && !string.IsNullOrWhiteSpace(order.PoNumber)
             && !string.IsNullOrWhiteSpace(order.Vendor)
             && !string.IsNullOrWhiteSpace(order.MaterialCode)

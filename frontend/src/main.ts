@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { bootstrapApplication } from '@angular/platform-browser';
 
 interface PurchaseOrder {
+  projectExternalCode: string;
   poNumber: string;
   vendor: string;
   status: 'released';
@@ -24,6 +25,7 @@ interface GatewayResponse {
 const API_BASE_URL = window.location.port === '4200' ? 'http://localhost:5000' : '';
 
 const createEmptyOrder = (): PurchaseOrder => ({
+  projectExternalCode: 'SAP-PROJ-001',
   poNumber: '',
   vendor: '',
   status: 'released',
@@ -44,7 +46,12 @@ const createEmptyOrder = (): PurchaseOrder => ({
 
     <div style="font-family: sans-serif; padding: 30px; max-width: 620px; margin: 0 auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
       <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">SAP Purchase Order Intake</h2>
-      <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Architecture: Angular -> API Gateway -> RabbitMQ -> Worker</p>
+      <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Architecture: SAP Interface -> API Gateway -> RabbitMQ -> Worker -> External System</p>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display:block; margin-bottom:5px; font-weight:bold; font-size:14px;">Project Code:</label>
+        <input type="text" [(ngModel)]="order.projectExternalCode" style="width:100%; padding:10px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;" placeholder="SAP-PROJ-001">
+      </div>
 
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>

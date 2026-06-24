@@ -37,7 +37,7 @@ public class ExternalOrderIntegration : IExternalOrderIntegration
             {
                 input = new
                 {
-                    projectExternalCode = "SAP-PROJ-001",
+                    projectExternalCode = order.ProjectExternalCode,
                     externalCode = order.PoNumber,
                     status = "OPEN",
                     vendor = order.Vendor,

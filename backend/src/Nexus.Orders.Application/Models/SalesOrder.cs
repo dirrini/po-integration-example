@@ -2,6 +2,7 @@
 
 public class SalesOrder
 {
+    public string ProjectExternalCode { get; set; } = "SAP-PROJ-001";
     public string PoNumber { get; set; } = string.Empty;
     public string Vendor { get; set; } = string.Empty;
     public string Status { get; set; } = "released";
