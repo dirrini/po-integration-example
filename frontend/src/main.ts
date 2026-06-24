@@ -38,9 +38,13 @@ const createEmptyOrder = (): PurchaseOrder => ({
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+    <div *ngIf="successToastMessage" class="success-toast" role="status" aria-live="polite">
+      {{ successToastMessage }}
+    </div>
+
     <div style="font-family: sans-serif; padding: 30px; max-width: 620px; margin: 0 auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
       <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">SAP Purchase Order Intake</h2>
-      <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Architecture: Angular -> MuleSoft API Gateway -> RabbitMQ -> SAP Worker</p>
+      <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Architecture: Angular -> API Gateway -> RabbitMQ -> Worker</p>
 
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
@@ -82,7 +86,7 @@ const createEmptyOrder = (): PurchaseOrder => ({
       </div>
 
       <button (click)="submitOrder()" style="background-color:#2980b9; color:white; padding:12px 15px; border:none; border-radius:4px; cursor:pointer; width:100%; font-size:16px; font-weight:bold; margin-bottom: 25px;">
-        Send Purchase Order to MuleSoft Gateway
+        Send Purchase Order
       </button>
 
       <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;" />
@@ -92,7 +96,7 @@ const createEmptyOrder = (): PurchaseOrder => ({
 
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
           <div>
-            <strong style="display: block; font-size: 14px;">SAP Worker Listener Daemon</strong>
+            <strong style="display: block; font-size: 14px;">Worker Listener Daemon</strong>
             <span [style.color]="isWorkerRunning ? '#27ae60' : '#c0392b'" style="font-size: 12px; font-weight: bold;">
               Status: {{ isWorkerRunning ? 'RUNNING (Processing Active)' : 'PAUSED (Messages Will Backlog)' }}
             </span>
@@ -112,6 +116,25 @@ const createEmptyOrder = (): PurchaseOrder => ({
     </div>
   `,
   styles: [`
+    .success-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      z-index: 1000;
+      transform: translateX(-50%);
+      width: min(420px, calc(100vw - 32px));
+      box-sizing: border-box;
+      padding: 14px 18px;
+      border: 1px solid #1f9d55;
+      border-radius: 6px;
+      background: #e9f9ef;
+      color: #17633a;
+      box-shadow: 0 10px 24px rgba(23, 99, 58, 0.18);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
     .slider:before {
       position: absolute;
       content: "";
@@ -135,6 +158,9 @@ export class AppComponent implements OnInit {
   public order: PurchaseOrder = createEmptyOrder();
   public gatewayResponse: GatewayResponse | null = null;
   public isWorkerRunning = true;
+  public successToastMessage = '';
+
+  private successToastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   public ngOnInit(): void {
     this.isWorkerRunning = true;
@@ -151,10 +177,12 @@ export class AppComponent implements OnInit {
         next: (res) => {
           this.gatewayResponse = res;
           this.order = createEmptyOrder();
+          this.showSuccessToast('Purchase order submitted successfully.');
         },
         error: (err: unknown) => {
           console.error(err);
-          this.gatewayResponse = { error: 'Failed to dispatch payload to MuleSoft API Gateway endpoint.' };
+          this.clearSuccessToast();
+          this.gatewayResponse = { error: 'Failed to dispatch payload to API Gateway endpoint.' };
         }
       });
   }
@@ -175,9 +203,26 @@ export class AppComponent implements OnInit {
         }
       });
   }
+
+  private showSuccessToast(message: string): void {
+    this.clearSuccessToast();
+    this.successToastMessage = message;
+    this.successToastTimeoutId = setTimeout(() => {
+      this.successToastMessage = '';
+      this.successToastTimeoutId = null;
+    }, 3500);
+  }
+
+  private clearSuccessToast(): void {
+    if (this.successToastTimeoutId) {
+      clearTimeout(this.successToastTimeoutId);
+      this.successToastTimeoutId = null;
+    }
+
+    this.successToastMessage = '';
+  }
 }
 
 bootstrapApplication(AppComponent, {
   providers: [provideHttpClient()]
 }).catch((err: unknown) => console.error(err));
-
