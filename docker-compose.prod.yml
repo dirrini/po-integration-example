@@ -19,6 +19,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    ports:
+      - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq_prod_data:/var/lib/rabbitmq
     healthcheck:
