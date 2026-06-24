@@ -32,6 +32,33 @@ jobs:
           test -n "${{ secrets.EXTERNAL_PRODUCTS_GRAPHQL_URL }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_GRAPHQL_URL" && exit 1)
           test -n "${{ secrets.EXTERNAL_PRODUCTS_API_KEY }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_API_KEY" && exit 1)
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          tags: dotnet-angular-app-backend:latest
+          load: true
+          cache-from: type=gha,scope=dotnet-angular-app-backend
+          cache-to: type=gha,mode=max,scope=dotnet-angular-app-backend
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          tags: dotnet-angular-app-frontend:latest
+          load: true
+          cache-from: type=gha,scope=dotnet-angular-app-frontend
+          cache-to: type=gha,mode=max,scope=dotnet-angular-app-frontend
+
+      - name: Package Docker images
+        run: |
+          docker save dotnet-angular-app-backend:latest dotnet-angular-app-frontend:latest | gzip > /tmp/dotnet-angular-app-images.tar.gz
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -56,6 +83,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/azure_vm_key "$AZURE_VM_USER@$AZURE_VM_HOST" "mkdir -p '$DEPLOY_PATH'"
           scp -i ~/.ssh/azure_vm_key /tmp/dotnet-angular-app.tar.gz "$AZURE_VM_USER@$AZURE_VM_HOST:/tmp/dotnet-angular-app.tar.gz"
+          scp -i ~/.ssh/azure_vm_key /tmp/dotnet-angular-app-images.tar.gz "$AZURE_VM_USER@$AZURE_VM_HOST:/tmp/dotnet-angular-app-images.tar.gz"
 
       - name: Deploy with Docker Compose
         env:
@@ -89,8 +117,9 @@ jobs:
           ssh -i ~/.ssh/azure_vm_key "$AZURE_VM_USER@$AZURE_VM_HOST" <<EOF
           set -euo pipefail
           tar -xzf /tmp/dotnet-angular-app.tar.gz -C "$DEPLOY_PATH"
+          gunzip -c /tmp/dotnet-angular-app-images.tar.gz | docker load
           mv /tmp/dotnet-angular-app.env "$DEPLOY_PATH/.env"
           cd "$DEPLOY_PATH"
-          docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+          docker compose -f docker-compose.prod.yml --env-file .env up -d --no-build
           docker image prune -f
           EOF

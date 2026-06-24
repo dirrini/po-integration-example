@@ -103,6 +103,8 @@ docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 
 The workflow is in `.github/workflows/deploy-azure.yml`.
 
+The workflow builds the backend and frontend Docker images on the GitHub runner, transfers the image archive to the VM, loads the images there, and starts Compose with `--no-build`. This avoids slow NuGet/npm dependency downloads on the VM.
+
 Create these GitHub Environment secrets in `Settings > Environments > production`:
 
 ```text
@@ -192,6 +194,20 @@ caddy
 ```
 
 The workflow runs automatically on pushes to `main`, or manually from GitHub Actions with `workflow_dispatch`.
+
+If a deploy appears stuck, check which step is running in GitHub Actions:
+
+- `Build backend image`: NuGet restore/publish is running on GitHub with BuildKit cache.
+- `Build frontend image`: npm install/build is running on GitHub with BuildKit cache.
+- `Deploy with Docker Compose`: the VM is loading the image archive and starting containers.
+
+On the VM, inspect the running services:
+
+```bash
+cd ~/dotnet-angular-app
+docker compose -f docker-compose.prod.yml --env-file .env ps
+docker compose -f docker-compose.prod.yml --env-file .env logs -f
+```
 
 Before the first workflow run, make sure Docker is installed on the VM and that the VM user can run Docker:
 
