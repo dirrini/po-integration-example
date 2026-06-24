@@ -128,7 +128,7 @@ const createEmptyOrder = (): PurchaseOrder => ({
       top: 20px;
       left: 50%;
       z-index: 1000;
-      transform: translateX(-50%);
+      transform: translate(-50%, -18px);
       width: min(420px, calc(100vw - 32px));
       box-sizing: border-box;
       padding: 14px 18px;
@@ -137,9 +137,32 @@ const createEmptyOrder = (): PurchaseOrder => ({
       background: #e9f9ef;
       color: #17633a;
       box-shadow: 0 10px 24px rgba(23, 99, 58, 0.18);
+      font-family: sans-serif;
       font-size: 14px;
       font-weight: 700;
+      line-height: 1.4;
       text-align: center;
+      opacity: 0;
+      animation: toast-slide-fade 3.5s ease-in-out forwards;
+      will-change: transform, opacity;
+    }
+
+    @keyframes toast-slide-fade {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -18px);
+      }
+
+      12%,
+      82% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -8px);
+      }
     }
 
     .slider:before {
@@ -184,7 +207,7 @@ export class AppComponent implements OnInit {
         next: (res) => {
           this.gatewayResponse = res;
           this.order = createEmptyOrder();
-          this.showSuccessToast('Purchase order submitted successfully.');
+          this.showSuccessToast(`Purchase order ${payload.poNumber} submitted: ${payload.materialDescription}.`);
         },
         error: (err: unknown) => {
           console.error(err);
