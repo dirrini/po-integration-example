@@ -158,6 +158,27 @@ Check the Caddy logs during the first certificate request:
 docker compose -f docker-compose.prod.yml --env-file .env logs -f caddy
 ```
 
+If you see this message:
+
+```text
+no such service: caddy
+```
+
+The VM still has an older copy of `docker-compose.prod.yml`. Update the project files on the VM, then redeploy:
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env config --services
+docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env logs -f caddy
+```
+
+The `config --services` command should include:
+
+```text
+caddy
+```
+
 The workflow runs automatically on pushes to `main`, or manually from GitHub Actions with `workflow_dispatch`.
 
 Before the first workflow run, make sure Docker is installed on the VM and that the VM user can run Docker:
