@@ -30,7 +30,9 @@ jobs:
           test -n "${{ secrets.RABBITMQ_DEFAULT_USER }}" || (echo "Missing production environment secret: RABBITMQ_DEFAULT_USER" && exit 1)
           test -n "${{ secrets.RABBITMQ_DEFAULT_PASS }}" || (echo "Missing production environment secret: RABBITMQ_DEFAULT_PASS" && exit 1)
           test -n "${{ secrets.EXTERNAL_PRODUCTS_GRAPHQL_URL }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_GRAPHQL_URL" && exit 1)
-          test -n "${{ secrets.EXTERNAL_PRODUCTS_API_KEY }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_API_KEY" && exit 1)
+          test -n "${{ secrets.EXTERNAL_PRODUCTS_TOKEN_URL }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_TOKEN_URL" && exit 1)
+          test -n "${{ secrets.EXTERNAL_PRODUCTS_CLIENT_ID }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_CLIENT_ID" && exit 1)
+          test -n "${{ secrets.EXTERNAL_PRODUCTS_CLIENT_SECRET }}" || (echo "Missing production environment secret: EXTERNAL_PRODUCTS_CLIENT_SECRET" && exit 1)
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -93,7 +95,9 @@ jobs:
           RABBITMQ_DEFAULT_USER: ${{ secrets.RABBITMQ_DEFAULT_USER }}
           RABBITMQ_DEFAULT_PASS: ${{ secrets.RABBITMQ_DEFAULT_PASS }}
           EXTERNAL_PRODUCTS_GRAPHQL_URL: ${{ secrets.EXTERNAL_PRODUCTS_GRAPHQL_URL }}
-          EXTERNAL_PRODUCTS_API_KEY: ${{ secrets.EXTERNAL_PRODUCTS_API_KEY }}
+          EXTERNAL_PRODUCTS_TOKEN_URL: ${{ secrets.EXTERNAL_PRODUCTS_TOKEN_URL }}
+          EXTERNAL_PRODUCTS_CLIENT_ID: ${{ secrets.EXTERNAL_PRODUCTS_CLIENT_ID }}
+          EXTERNAL_PRODUCTS_CLIENT_SECRET: ${{ secrets.EXTERNAL_PRODUCTS_CLIENT_SECRET }}
         run: |
           cat > /tmp/production.env <<EOF
           APP_DOMAIN=$APP_DOMAIN
@@ -107,9 +111,13 @@ jobs:
           RabbitMq__UserName=$RABBITMQ_DEFAULT_USER
           RabbitMq__Password=$RABBITMQ_DEFAULT_PASS
           EXTERNAL_PRODUCTS_GRAPHQL_URL=$EXTERNAL_PRODUCTS_GRAPHQL_URL
-          EXTERNAL_PRODUCTS_API_KEY=$EXTERNAL_PRODUCTS_API_KEY
+          EXTERNAL_PRODUCTS_TOKEN_URL=$EXTERNAL_PRODUCTS_TOKEN_URL
+          EXTERNAL_PRODUCTS_CLIENT_ID=$EXTERNAL_PRODUCTS_CLIENT_ID
+          EXTERNAL_PRODUCTS_CLIENT_SECRET=$EXTERNAL_PRODUCTS_CLIENT_SECRET
           ExternalProducts__GraphqlUrl=$EXTERNAL_PRODUCTS_GRAPHQL_URL
-          ExternalProducts__ApiKey=$EXTERNAL_PRODUCTS_API_KEY
+          ExternalProducts__TokenUrl=$EXTERNAL_PRODUCTS_TOKEN_URL
+          ExternalProducts__ClientId=$EXTERNAL_PRODUCTS_CLIENT_ID
+          ExternalProducts__ClientSecret=$EXTERNAL_PRODUCTS_CLIENT_SECRET
           EOF
 
           scp -i ~/.ssh/azure_vm_key /tmp/production.env "$AZURE_VM_USER@$AZURE_VM_HOST:/tmp/dotnet-angular-app.env"

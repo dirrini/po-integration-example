@@ -141,7 +141,8 @@ AZURE_VM_SSH_KEY
 RABBITMQ_DEFAULT_USER
 RABBITMQ_DEFAULT_PASS
 EXTERNAL_PRODUCTS_GRAPHQL_URL
-EXTERNAL_PRODUCTS_API_KEY
+EXTERNAL_PRODUCTS_CLIENT_ID
+EXTERNAL_PRODUCTS_CLIENT_SECRET
 ```
 
 Create this GitHub Actions repository variable:
@@ -164,16 +165,19 @@ The worker sends processed purchase orders to the configured GraphQL endpoint us
 
 ```text
 ExternalProducts__GraphqlUrl
-ExternalProducts__ApiKey
+ExternalProducts__TokenUrl
+ExternalProducts__ClientId
+ExternalProducts__ClientSecret
 ```
 
 In development, the default target is:
 
 ```text
 http://host.docker.internal:4000/graphql
+http://host.docker.internal:4000/api/token
 ```
 
-In production, set the real external GraphQL URL and bearer token in `.env` or GitHub Actions secrets.
+In production, set the real external GraphQL URL, token URL, client ID, and client secret in `.env` or GitHub Actions secrets. The backend uses the client credentials flow to request a short-lived integration JWT, and that JWT is used as the bearer token for GraphQL calls.
 
 ## Author
 

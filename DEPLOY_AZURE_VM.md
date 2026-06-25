@@ -51,7 +51,9 @@ Set:
 ```env
 APP_DOMAIN=po-integration-example.dirrini.tech
 EXTERNAL_PRODUCTS_GRAPHQL_URL=https://your-project-pulse-domain.com/graphql
-EXTERNAL_PRODUCTS_API_KEY=<integration-api-key-from-project-pulse>
+EXTERNAL_PRODUCTS_TOKEN_URL=https://your-project-pulse-domain.com/api/token
+EXTERNAL_PRODUCTS_CLIENT_ID=<integration-client-id-from-project-pulse>
+EXTERNAL_PRODUCTS_CLIENT_SECRET=<integration-client-secret-from-project-pulse>
 RABBITMQ_DEFAULT_PASS=<strong-password>
 RabbitMq__Password=<same-strong-password>
 ```
@@ -113,7 +115,9 @@ AZURE_VM_SSH_KEY
 RABBITMQ_DEFAULT_USER
 RABBITMQ_DEFAULT_PASS
 EXTERNAL_PRODUCTS_GRAPHQL_URL
-EXTERNAL_PRODUCTS_API_KEY
+EXTERNAL_PRODUCTS_TOKEN_URL
+EXTERNAL_PRODUCTS_CLIENT_ID
+EXTERNAL_PRODUCTS_CLIENT_SECRET
 ```
 
 `AZURE_VM_USER` is usually `azureuser` or `ubuntu`, depending on how the VM was created.

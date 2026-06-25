@@ -1,4 +1,3 @@
-﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +19,9 @@ builder.Services.AddCors(options =>
 });
 
 var graphQlUrl = builder.Configuration["ExternalProducts:GraphqlUrl"] ?? "http://host.docker.internal:4000/graphql";
-var graphQlApiKey = builder.Configuration["ExternalProducts:ApiKey"] ?? "dev-sap-api-key-123";
+var tokenUrl = builder.Configuration["ExternalProducts:TokenUrl"] ?? "http://host.docker.internal:4000/api/token";
+var clientId = builder.Configuration["ExternalProducts:ClientId"] ?? "sap-purchase-orders";
+var clientSecret = builder.Configuration["ExternalProducts:ClientSecret"] ?? "dev-sap-api-key-123";
 var rabbitMqHost = builder.Configuration["RabbitMq:HostName"] ?? "rabbitmq";
 var rabbitMqUserName = builder.Configuration["RabbitMq:UserName"] ?? "guest";
 var rabbitMqPassword = builder.Configuration["RabbitMq:Password"] ?? "guest";
@@ -28,7 +29,13 @@ var rabbitMqPassword = builder.Configuration["RabbitMq:Password"] ?? "guest";
 builder.Services.AddHttpClient<IExternalOrderIntegration, ExternalOrderIntegration>(client =>
 {
     client.BaseAddress = new Uri(graphQlUrl);
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", graphQlApiKey);
+});
+builder.Services.AddSingleton(new ExternalProductsSettings
+{
+    GraphqlUrl = graphQlUrl,
+    TokenUrl = tokenUrl,
+    ClientId = clientId,
+    ClientSecret = clientSecret
 });
 builder.Services.AddSingleton(_ => new ConnectionFactory
 {
@@ -223,6 +230,9 @@ public sealed class RabbitMqWorkerManager : IDisposable
         channel.QueueBind(queue: QueueName, exchange: ExchangeName, routingKey: RoutingKey);
     }
 }
+
+
+
 
 
 
