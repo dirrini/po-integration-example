@@ -71,7 +71,7 @@ GET http://localhost:5000/api/worker/stop
 Purchase order endpoint:
 
 ```text
-POST http://localhost:5000/api/mulesoft/orders
+POST http://localhost:5000/api/orders
 ```
 
 ## Environment Files
@@ -141,21 +141,30 @@ AZURE_VM_SSH_KEY
 RABBITMQ_DEFAULT_USER
 RABBITMQ_DEFAULT_PASS
 EXTERNAL_PRODUCTS_GRAPHQL_URL
+EXTERNAL_PRODUCTS_TOKEN_URL
 EXTERNAL_PRODUCTS_CLIENT_ID
 EXTERNAL_PRODUCTS_CLIENT_SECRET
 ```
 
-Create this GitHub Actions repository variable:
+Create these GitHub Actions environment variables:
 
 ```text
 AZURE_VM_HOST
+APP_DOMAIN
+FRONTEND_DIRECT_ORDERS_URL
+FRONTEND_AWS_API_GATEWAY_ORDERS_URL
 ```
 
 For your current VM:
 
 ```text
 AZURE_VM_HOST=64.236.155.201
+APP_DOMAIN=po-integration-example.dirrini.tech
+FRONTEND_DIRECT_ORDERS_URL=https://po-integration-example.dirrini.tech/api/orders
+FRONTEND_AWS_API_GATEWAY_ORDERS_URL=https://xiak2r5r5d.execute-api.us-east-1.amazonaws.com/sap-pulse-api-1
 ```
+
+The frontend URL values are public configuration. Angular bakes them into the browser bundle during the Docker image build.
 
 The workflow runs on pushes to `main` and can also be started manually from the GitHub Actions tab.
 

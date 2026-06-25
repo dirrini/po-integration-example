@@ -48,6 +48,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        FRONTEND_DIRECT_ORDERS_URL: ${FRONTEND_DIRECT_ORDERS_URL}
+        FRONTEND_AWS_API_GATEWAY_ORDERS_URL: ${FRONTEND_AWS_API_GATEWAY_ORDERS_URL}
     restart: unless-stopped
     expose:
       - "80"

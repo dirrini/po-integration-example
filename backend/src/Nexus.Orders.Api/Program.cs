@@ -64,7 +64,7 @@ app.MapGet("/api/worker/start", (RabbitMqWorkerManager worker) =>
     return Results.Ok("Consumer started. Draining backlog...");
 });
 
-app.MapPost("/api/mulesoft/orders", ([FromBody] SalesOrder order, IMessagePublisher publisher) =>
+static IResult QueueOrder(SalesOrder order, IMessagePublisher publisher)
 {
     if (order == null || string.IsNullOrWhiteSpace(order.ProjectExternalCode) || string.IsNullOrWhiteSpace(order.PoNumber) || string.IsNullOrWhiteSpace(order.Vendor) || string.IsNullOrWhiteSpace(order.MaterialCode) || string.IsNullOrWhiteSpace(order.MaterialDescription) || string.IsNullOrWhiteSpace(order.DeliveryDate) || order.Quantity <= 0)
     {
@@ -75,13 +75,16 @@ app.MapPost("/api/mulesoft/orders", ([FromBody] SalesOrder order, IMessagePublis
     {
         order.Status = "released";
         publisher.PublishOrder(order);
-        return Results.Accepted("/api/mulesoft/orders", new { status = $"Queued for SAP Processing: {order.PoNumber}" });
+        return Results.Accepted("/api/orders", new { status = $"Queued for SAP Processing: {order.PoNumber}" });
     }
     catch (Exception ex)
     {
         return Results.Problem($"Gateway Engine Error: {ex.Message}");
     }
-});
+}
+
+app.MapPost("/api/orders", ([FromBody] SalesOrder order, IMessagePublisher publisher) =>
+    QueueOrder(order, publisher));
 
 app.Run();
 

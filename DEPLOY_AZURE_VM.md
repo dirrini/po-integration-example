@@ -131,12 +131,16 @@ AZURE_VM_HOST=64.236.155.201
 APP_DOMAIN=po-integration-example.dirrini.tech
 HTTP_PORT=80
 HTTPS_PORT=443
+FRONTEND_DIRECT_ORDERS_URL=https://po-integration-example.dirrini.tech/api/orders
+FRONTEND_AWS_API_GATEWAY_ORDERS_URL=https://xiak2r5r5d.execute-api.us-east-1.amazonaws.com/sap-pulse-api-1
 ```
 
 `AZURE_VM_HOST` is required by the workflow. It is an environment variable instead of being hardcoded in the workflow file.
 `APP_DOMAIN` is required so Caddy can request the correct SSL certificate.
 
 `HTTP_PORT` and `HTTPS_PORT` are optional because the workflow defaults to `80` and `443`, but adding them makes the deployment settings explicit.
+
+`FRONTEND_DIRECT_ORDERS_URL` and `FRONTEND_AWS_API_GATEWAY_ORDERS_URL` are public frontend build values. They are baked into the Angular bundle, so set them before the workflow builds the frontend image.
 
 If the workflow log shows empty values like this:
 

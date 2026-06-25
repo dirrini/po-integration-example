@@ -32,6 +32,8 @@
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env.local
     ports:
       - "4200:4200"
     volumes:

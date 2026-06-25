@@ -3,6 +3,7 @@ import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { bootstrapApplication } from '@angular/platform-browser';
+import { environment } from './environments/environment';
 
 interface PurchaseOrder {
   projectExternalCode: string;
@@ -46,7 +47,7 @@ const createEmptyOrder = (): PurchaseOrder => ({
 
     <div style="font-family: sans-serif; padding: 30px; max-width: 620px; margin: 0 auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
       <h2 style="color: #2c3e50; margin-top: 0; margin-bottom: 5px;">SAP Purchase Order Intake</h2>
-      <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Architecture: SAP Interface -> API Gateway -> RabbitMQ -> Worker -> External System</p>
+      <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Architecture: SAP Interface -> {{ isAwsGatewayEnabled ? 'AWS API Gateway' : 'API Endpoint' }} -> RabbitMQ -> Worker -> External System</p>
 
       <div style="margin-bottom: 15px;">
         <label style="display:block; margin-bottom:5px; font-weight:bold; font-size:14px;">Project Code:</label>
@@ -112,6 +113,20 @@ const createEmptyOrder = (): PurchaseOrder => ({
           <label class="switch" style="position: relative; display: inline-block; width: 60px; height: 34px; flex: 0 0 auto;">
             <input type="checkbox" [checked]="isWorkerRunning" (change)="toggleWorkerState()" style="opacity: 0; width: 0; height: 0;">
             <span class="slider" [style.background-color]="isWorkerRunning ? '#27ae60' : '#ccc'" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; transition: .4s; border-radius: 34px;"></span>
+          </label>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e9ecef;">
+          <div>
+            <strong style="display: block; font-size: 14px;">AWS API Gateway</strong>
+            <span [style.color]="isAwsGatewayEnabled ? '#27ae60' : '#7f8c8d'" style="font-size: 12px; font-weight: bold;">
+              Status: {{ isAwsGatewayEnabled ? 'ENABLED (Gateway Path)' : 'DISABLED (Direct API Endpoint)' }}
+            </span>
+          </div>
+
+          <label class="switch" style="position: relative; display: inline-block; width: 60px; height: 34px; flex: 0 0 auto;">
+            <input type="checkbox" [checked]="isAwsGatewayEnabled" (change)="toggleAwsGateway()" style="opacity: 0; width: 0; height: 0;">
+            <span class="slider" [style.background-color]="isAwsGatewayEnabled ? '#27ae60' : '#ccc'" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; transition: .4s; border-radius: 34px;"></span>
           </label>
         </div>
       </div>
@@ -188,6 +203,7 @@ export class AppComponent implements OnInit {
   public order: PurchaseOrder = createEmptyOrder();
   public gatewayResponse: GatewayResponse | null = null;
   public isWorkerRunning = true;
+  public isAwsGatewayEnabled = false;
   public successToastMessage = '';
 
   private successToastTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -202,7 +218,7 @@ export class AppComponent implements OnInit {
       status: 'released'
     };
 
-    this.http.post<GatewayResponse>(`${API_BASE_URL}/api/mulesoft/orders`, payload)
+    this.http.post<GatewayResponse>(this.getOrderSubmissionUrl(), payload)
       .subscribe({
         next: (res) => {
           this.gatewayResponse = res;
@@ -232,6 +248,14 @@ export class AppComponent implements OnInit {
           this.gatewayResponse = { error: 'Failed to dispatch state control command to backend worker.' };
         }
       });
+  }
+
+  public toggleAwsGateway(): void {
+    this.isAwsGatewayEnabled = !this.isAwsGatewayEnabled;
+  }
+
+  private getOrderSubmissionUrl(): string {
+    return this.isAwsGatewayEnabled ? environment.awsGatewayOrdersUrl : environment.directOrdersUrl;
   }
 
   private showSuccessToast(message: string): void {
